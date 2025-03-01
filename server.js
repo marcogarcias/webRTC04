@@ -138,7 +138,8 @@ io.on('connection', (socket) => {
     });
 
     socket.on('chat-message', ({ roomId, message }) => {
-        const room = rooms.get(roomId);
+        //const room = rooms.get(roomId);
+        const room = rooms[roomId];
         if (room) {
             // Determinar si el usuario es broadcaster o espectador
             const isBroadcaster = room.broadcasters.has(socket.id);
