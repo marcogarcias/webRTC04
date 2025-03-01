@@ -1,0 +1,17 @@
+{
+  "name": "webrtc04",
+  "version": "4.0.0",
+  "description": "Servidor de señalización para WebRTC 4.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "socket.io": "^4.5.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.15"
+  }
+}
