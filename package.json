@@ -4,7 +4,7 @@
   "description": "Servidor de señalización para WebRTC 4.0",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node server.v5.js",
     "dev": "nodemon server.js"
   },
   "dependencies": {
