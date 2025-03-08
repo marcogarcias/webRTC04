@@ -65,6 +65,13 @@ io.on('connection', (socket) => {
 
     if(userType =='kukurygirl' || userType =='guest'){
       console.log('1 join: userType', userType);
+      if(userType =='guest'){
+        socket.emit('set-room', {
+          roomId: roomId,
+          userType: userType
+        });
+      }
+
       socket.emit('broadcaster-status', {
         idUser: socket.id,
         isBroadcaster: isBroadcaster,
@@ -90,6 +97,11 @@ io.on('connection', (socket) => {
 
     if(userType =='viewer'){
       console.log('3 join: userType', userType);
+      socket.emit('set-room', {
+        roomId: roomId,
+        userType: userType
+      });
+      
       socket.emit('broadcaster-status', {
         idUser: socket.id,
         roomId: roomId,
