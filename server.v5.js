@@ -92,6 +92,7 @@ io.on('connection', (socket) => {
       console.log('3 join: userType', userType);
       socket.emit('broadcaster-status', {
         idUser: socket.id,
+        roomId: roomId,
         isBroadcaster: false,
         broadcasters: room.broadcasters,
         users: users
