@@ -13,6 +13,7 @@ const io = require('socket.io')(http, {
 const rooms = {};  // Structure: roomId -> {broadcasters: [], viewers: []}
 let roomNow;
 let users = {};
+let topic;
 
 io.on('connection', (socket) => {
   socket.on('join', (data) => {
@@ -21,7 +22,7 @@ io.on('connection', (socket) => {
     const userType = data.userType ? data.userType : null;
     const nick = data.nick ? data.nick : socket.id;
     const ip = data.ip ? data.ip : null;
-    console.log('1 sala', roomId);
+    console.log('1 sala', roomId, data);
     
     if(userType == 'kukurygirl' && !roomId){
       return socket.emit('socketErrores', {type: 'canceledJoin', userType: userType, message: 'Ingresa una sala.'});
@@ -46,9 +47,12 @@ io.on('connection', (socket) => {
     let isFirstBroadcaster = false;
 
     if(!rooms[roomId]) {
+      topic = data.topic ? data.topic : '';
+
       rooms[roomId] = {
         broadcasters: [],
-        viewers: []
+        viewers: [], 
+        topic: topic
       };
 
       isFirstBroadcaster = isBroadcaster;
@@ -57,7 +61,7 @@ io.on('connection', (socket) => {
     const room = rooms[roomId];
     
     // Add user to appropriate list
-    if(isBroadcaster) {
+    if(isBroadcaster){
       // Check if broadcaster already exists (avoid duplicates)
       if(!room.broadcasters.includes(socket.id)) {
         room.broadcasters.push(socket.id);
@@ -97,7 +101,8 @@ io.on('connection', (socket) => {
       // Notify all viewers about this broadcaster
       room.viewers.forEach(viewerId => {
         //console.log('Notifying viewer', viewerId, 'about broadcaster', socket.id);
-        io.to(viewerId).emit('broadcaster-joined', socket.id, users);
+        //io.to(viewerId).emit('broadcaster-joined', socket.id, users);
+        io.to(socket.id).emit('viewer-joined', viewerId);
       });
     }
 
@@ -130,7 +135,8 @@ io.on('connection', (socket) => {
       roomId,
       broadcasters: room.broadcasters,
       viewerCount: room.viewers.length,
-      users: users
+      users: users,
+      topic: topic
     });
   });
 
@@ -220,10 +226,11 @@ io.on('connection', (socket) => {
 
   // Manejar control de medios (video/audio)
   socket.on('media-control', (data) => {
+    /*
     const roomId = data.roomId;
     const room = rooms[roomId];
     
-    if (room) {
+    if(room){
       // Añadir información del usuario que realizó el cambio
       data.userId = socket.id;
       data.nick = users[socket.id]?.nick || socket.id;
@@ -231,7 +238,7 @@ io.on('connection', (socket) => {
       // Reenviar a todos en la sala
       io.to(roomId).emit('media-control', data);
       console.log(`Usuario ${socket.id} (${data.nick}) cambió estado de ${data.mediaType} a ${data.enabled ? 'activado' : 'desactivado'}`);
-    }
+    }*/
   });
 
   // Manejar cuando un usuario abandona voluntariamente
@@ -277,6 +284,11 @@ io.on('connection', (socket) => {
       
       console.log(`Usuario ${socket.id} abandonó voluntariamente la sala ${roomId}`);
     }
+  });
+
+  socket.on('sendHeart', (data) => {
+    const roomId = data.roomId ? data.roomId : '';
+    io.to(roomId).emit('sendHeart', data);
   });
 });
 
