@@ -22,6 +22,8 @@ io.on('connection', (socket) => {
     const userType = data.userType ? data.userType : null;
     const nick = data.nick ? data.nick : socket.id;
     const ip = data.ip ? data.ip : null;
+    const from = data.from ? data.from : null;
+    const fromFull = data.fromFull ? data.fromFull : null;
     console.log('1 sala', roomId, data);
     
     if(userType == 'kukurygirl' && !roomId){
@@ -42,11 +44,11 @@ io.on('connection', (socket) => {
     socket.join(roomId);
     roomNow = roomId;
 
-    users[socket.id] = {id: socket.id, nick: nick, ip: ip, userType: userType};
+    users[socket.id] = {id: socket.id, nick: nick, ip: ip, userType: userType, from: from, fromFull: fromFull};
     const isBroadcaster = userType=='kukurygirl' || userType=='guest';
     let isFirstBroadcaster = false;
 
-    if(!rooms[roomId]) {
+    if(!rooms[roomId]){
       topic = data.topic ? data.topic : '';
 
       rooms[roomId] = {
