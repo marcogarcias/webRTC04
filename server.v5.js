@@ -204,6 +204,54 @@ io.on('connection', (socket) => {
     });
   });
 
+  socket.on('startGame', function(data){
+    data = (typeof data === 'object') ? data : {};
+    let roomId = data.roomId ? data.roomId : null;
+    let userType = data.userType ? data.userType : null;
+    if(roomId && (userType == 'kukurygirl' || userType == 'guest')){
+      io.to(roomId).emit('startGame');
+    }
+  });
+
+  socket.on('selectGame', function(data){
+    data = (typeof data === 'object') ? data : {};
+    const roomId = data.roomId ? data.roomId : null;
+    const userType = data.userType ? data.userType : null;
+    const game = data.game ? data.game : null;
+    if(roomId && (userType == 'kukurygirl' || userType == 'guest')){
+      io.to(roomId).emit('selectGame', { game });
+    }
+  });
+
+  socket.on('startStopVerdad', function(data){
+    data = (typeof data === 'object') ? data : {};
+    const roomId = data.roomId ? data.roomId : null;
+    const userType = data.userType ? data.userType : null;
+    const start = data.start ? data.start : 0;
+    if(roomId && (userType == 'kukurygirl' || userType == 'guest')){
+      io.to(roomId).emit('startStopVerdad', { start });
+    }
+  });
+
+  socket.on('startStopRuleta', function(data){
+    data = (typeof data === 'object') ? data : {};
+    const roomId = data.roomId ? data.roomId : null;
+    const userType = data.userType ? data.userType : null;
+    const start = data.start ? data.start : 0;
+    if(roomId && (userType == 'kukurygirl' || userType == 'guest')){
+      io.to(roomId).emit('startStopRuleta', { start });
+    }
+  });
+
+  socket.on('gameClose', function(data){
+    data = (typeof data === 'object') ? data : {};
+    const roomId = data.roomId ? data.roomId : null;
+    const userType = data.userType ? data.userType : null;
+    if(roomId && (userType == 'kukurygirl' || userType == 'guest')){
+      io.to(roomId).emit('gameClose');
+    }
+  });
+
   socket.on('chat-message', ({ roomId, message }) => {
     const room = rooms[roomId];
     if (room) {
