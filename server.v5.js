@@ -43,8 +43,17 @@ io.on('connection', (socket) => {
 
     socket.join(roomId);
     roomNow = roomId;
+    let rgbUser = socketIdToRGB(socket.id);
 
-    users[socket.id] = {id: socket.id, nick: nick, ip: ip, userType: userType, from: from, fromFull: fromFull};
+    users[socket.id] = {
+      id: socket.id, 
+      nick: nick, 
+      rgbUser: rgbUser.hex ? rgbUser.hex : '#000', 
+      ip: ip, 
+      userType: userType, 
+      from: from, 
+      fromFull: fromFull
+    };
     const isBroadcaster = userType=='kukurygirl' || userType=='guest';
     let isFirstBroadcaster = false;
 
@@ -259,11 +268,13 @@ io.on('connection', (socket) => {
       const isBroadcaster = room.broadcasters.includes(socket.id);
       const userType = isBroadcaster ? 'Broadcaster' : 'Espectador';
       const nick = users[socket.id].nick ? users[socket.id].nick : socket.id;
+      const rgbUser = users[socket.id].rgbUser ? users[socket.id].rgbUser : '#000';
       
       // Create message object
       const messageData = {
         userId: socket.id.slice(0, 6),
-        nick, nick,
+        nick: nick,
+        rgbUser: rgbUser,
         userType: userType,
         message: message,
         timestamp: new Date().toISOString()
@@ -341,6 +352,29 @@ io.on('connection', (socket) => {
     io.to(roomId).emit('sendHeart', data);
   });
 });
+
+// función para crear un código rgb a aprtir del id del socket del usuario
+function socketIdToRGB(id, min = 50, max = 170) {
+  let hash = 0;
+
+  // Crear un hash simple del string
+  for (let i = 0; i < id.length; i++) {
+    hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  }
+
+  // Función para mapear un número de 0–255 al rango deseado
+  const scale = (x) => Math.floor(min + ((x / 255) * (max - min)));
+
+  const r = scale((hash >> 16) & 0xFF);
+  const g = scale((hash >> 8) & 0xFF);
+  const b = scale(hash & 0xFF);
+
+  return {
+    r, g, b,
+    rgbString: `${r}, ${g}, ${b}`,
+    hex: `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
+  };
+}
 
 app.use(express.static('public'));
 
