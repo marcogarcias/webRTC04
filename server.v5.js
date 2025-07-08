@@ -285,23 +285,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Manejar control de medios (video/audio)
-  socket.on('media-control', (data) => {
-    /*
-    const roomId = data.roomId;
-    const room = rooms[roomId];
-    
-    if(room){
-      // Añadir información del usuario que realizó el cambio
-      data.userId = socket.id;
-      data.nick = users[socket.id]?.nick || socket.id;
-      
-      // Reenviar a todos en la sala
-      io.to(roomId).emit('media-control', data);
-      console.log(`Usuario ${socket.id} (${data.nick}) cambió estado de ${data.mediaType} a ${data.enabled ? 'activado' : 'desactivado'}`);
-    }*/
-  });
-
   // Manejar cuando un usuario abandona voluntariamente
   socket.on('leave-room', (data) => {
     const roomId = data.roomId;
@@ -350,6 +333,10 @@ io.on('connection', (socket) => {
   socket.on('sendHeart', (data) => {
     const roomId = data.roomId ? data.roomId : '';
     io.to(roomId).emit('sendHeart', data);
+  });
+
+  socket.on('statusServer', (data) => {
+    socket.emit('statusServer', { rooms, roomNow, users, topic, data });
   });
 });
 
