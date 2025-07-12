@@ -1,6 +1,7 @@
 require('dotenv').config();
 
 const express = require('express');
+const { type } = require('os');
 const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http, {
@@ -18,7 +19,7 @@ let topic;
 io.on('connection', (socket) => {
   socket.on('join', (data) => {
     data = (typeof data === 'object') ? data : {};
-    let roomId = data.roomId ? data.roomId : null;
+    let roomId = roomNow ? roomNow : (data.roomId ? data.roomId : null);
     const userType = data.userType ? data.userType : null;
     const nick = data.nick ? data.nick : socket.id;
     const ip = data.ip ? data.ip : null;
@@ -58,7 +59,7 @@ io.on('connection', (socket) => {
     let isFirstBroadcaster = false;
 
     if(!rooms[roomId]){
-      topic = data.topic ? data.topic : '';
+      topic = topic ? topic : (data.topic ? data.topic : '');
 
       rooms[roomId] = {
         broadcasters: [],
@@ -86,12 +87,12 @@ io.on('connection', (socket) => {
 
     if(userType =='kukurygirl' || userType =='guest'){
       //console.log('1 join: userType', userType);
-      if(userType =='guest'){
+      //if(userType =='guest'){
         socket.emit('set-room', {
           roomId: roomId,
           userType: userType
         });
-      }
+      //}
 
       socket.emit('broadcaster-status', {
         idUser: socket.id,
@@ -263,25 +264,30 @@ io.on('connection', (socket) => {
 
   socket.on('chat-message', ({ roomId, message }) => {
     const room = rooms[roomId];
-    if (room) {
-      // Determine if user is broadcaster or viewer
-      const isBroadcaster = room.broadcasters.includes(socket.id);
-      const userType = isBroadcaster ? 'Broadcaster' : 'Espectador';
-      const nick = users[socket.id].nick ? users[socket.id].nick : socket.id;
-      const rgbUser = users[socket.id].rgbUser ? users[socket.id].rgbUser : '#000';
-      
-      // Create message object
-      const messageData = {
-        userId: socket.id.slice(0, 6),
-        nick: nick,
-        rgbUser: rgbUser,
-        userType: userType,
-        message: message,
-        timestamp: new Date().toISOString()
-      };
-      
-      // Send message to everyone in the room
-      io.to(roomId).emit('chat-message', messageData);
+    if(message.includes('_CMD_')){
+      const res = comandsAdmin(message);
+      socket.emit('socketErrores', { message: res, type: '', userType: '' });
+    }else{
+      if(room){
+        // Determine if user is broadcaster or viewer
+        const isBroadcaster = room.broadcasters.includes(socket.id);
+        const userType = isBroadcaster ? 'Broadcaster' : 'Espectador';
+        const nick = users[socket.id].nick ? users[socket.id].nick : socket.id;
+        const rgbUser = users[socket.id].rgbUser ? users[socket.id].rgbUser : '#000';
+        
+        // Create message object
+        const messageData = {
+          userId: socket.id.slice(0, 6),
+          nick: nick,
+          rgbUser: rgbUser,
+          userType: userType,
+          message: message,
+          timestamp: new Date().toISOString()
+        };
+        
+        // Send message to everyone in the room
+        io.to(roomId).emit('chat-message', messageData);
+      }
     }
   });
 
@@ -339,6 +345,46 @@ io.on('connection', (socket) => {
     socket.emit('statusServer', { rooms, roomNow, users, topic, data });
   });
 });
+
+function comandsAdmin(message){
+  const parts = message.toLowerCase().split('_');
+  const cmd = parts[2] ? parts[2] : null;
+  let res = 'No se creo la sala';
+  console.log('1 comandsAdmin', message, cmd, parts);
+  if(cmd && parts.length >= 2){
+    switch(cmd){
+      case 'create':
+        // ejempo message = '_CMD_CREATE_123_Saludos a todos';
+        res = createRoom({ room: parts[3], title: parts[4] });
+    }
+  }
+  return res;
+}
+
+function createRoom(data){
+  data = (typeof data === 'object') ? data : {};
+  const roomId = data.room ? data.room : 123;
+  const title = data.title ? data.title : '';
+  let res = '';
+  console.log('2 createRoom', data, roomId, topic);
+
+  //socket.join(roomId);
+  roomNow = roomId;
+
+  if(!rooms[roomId]){
+    topic = title;
+    rooms[roomId] = {
+      broadcasters: [],
+      viewers: [], 
+      topic: topic
+    };
+    res = 'sala creada.';
+    console.log('3 SALA CREADA', roomId, rooms);
+  }else{
+    res = 'No se creo la sala orque ya existe una con el mismno nombre.';
+  }
+  return res;
+}
 
 // función para crear un código rgb a aprtir del id del socket del usuario
 function socketIdToRGB(id, min = 50, max = 170) {
