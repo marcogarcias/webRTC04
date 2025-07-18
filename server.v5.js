@@ -50,6 +50,7 @@ io.on('connection', (socket) => {
       id: socket.id, 
       nick: nick, 
       rgbUser: rgbUser.hex ? rgbUser.hex : '#000', 
+      screenShare: false,
       ip: ip, 
       userType: userType, 
       from: from, 
@@ -344,11 +345,21 @@ io.on('connection', (socket) => {
   socket.on('statusServer', (data) => {
     socket.emit('statusServer', { rooms, roomNow, users, topic, data });
   });
+
+  socket.on('screenShare', (data)=>{
+    const roomId = data.roomId ? data.roomId : '';
+    const screenShare = data.screenShare ? data.screenShare : false;
+    if(roomId && users[socket.id] && (users[socket.id].userType === 'kukurygirl' || users[socket.id].userType === 'guest')) {
+      users[socket.id].screenShare = screenShare;
+      io.to(roomId).emit('screenShare', { userId: socket.id, screenShare });
+    }
+    //socket.emit('statusServer', { rooms, roomNow, users, topic, data });
+  });
 });
 
 function comandsAdmin(message){
-  const parts = message.toLowerCase().split('_');
-  const cmd = parts[2] ? parts[2] : null;
+  const parts = message.split('_');
+  const cmd = parts[2] ? parts[2].toLowerCase() : null;
   let res = 'No se creo la sala';
   console.log('1 comandsAdmin', message, cmd, parts);
   if(cmd && parts.length >= 2){
@@ -356,6 +367,11 @@ function comandsAdmin(message){
       case 'create':
         // ejempo message = '_CMD_CREATE_123_Saludos a todos';
         res = createRoom({ room: parts[3], title: parts[4] });
+        break;
+      case 'refresh':
+        // ejempo message = '_CMD_REFRESH_123_sd1256fd245f3d56';
+        res = refreshPage({ roomId: parts[3], userId: parts[4] });
+        break;
     }
   }
   return res;
@@ -384,6 +400,22 @@ function createRoom(data){
     res = 'No se creo la sala orque ya existe una con el mismno nombre.';
   }
   return res;
+}
+
+function refreshPage(data){
+  data = (typeof data === 'object') ? data : {};
+  const roomId = data.roomId ? data.roomId : '';
+  const userId = data.userId ? data.userId : '';
+  let res = 'refrescando página';
+  console.log('2 refreshPage', data);
+
+  if(userId){
+    //console.log('2.1 refreshPage', data, roomId, userId);
+    io.to(userId).emit('socketErrores', { message: res, type: 'refeshPage', userType: '' });
+  }else{
+    //console.log('2.2 refreshPage', data, roomId, userId);
+    io.to(roomId).emit('socketErrores', { message: res, type: 'refeshPage', userType: '' });
+  }
 }
 
 // función para crear un código rgb a aprtir del id del socket del usuario
