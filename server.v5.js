@@ -266,8 +266,8 @@ io.on('connection', (socket) => {
   socket.on('chat-message', ({ roomId, message }) => {
     const room = rooms[roomId];
     if(message.includes('_CMD_')){
-      const res = comandsAdmin(message);
-      socket.emit('socketErrores', { message: res, type: '', userType: '' });
+      const res = comandsAdmin(socket.id, message);
+      //socket.emit('socketErrores', { message: res, type: '', userType: '' });
     }else{
       if(room){
         // Determine if user is broadcaster or viewer
@@ -357,7 +357,7 @@ io.on('connection', (socket) => {
   });
 });
 
-function comandsAdmin(message){
+function comandsAdmin(userId, message){
   const parts = message.split('_');
   const cmd = parts[2] ? parts[2].toLowerCase() : null;
   let res = 'No se creo la sala';
@@ -366,7 +366,7 @@ function comandsAdmin(message){
     switch(cmd){
       case 'create':
         // ejempo message = '_CMD_CREATE_123_Saludos a todos';
-        res = createRoom({ room: parts[3], title: parts[4] });
+        res = createRoom({ room: parts[3], title: parts[4], userId: userId });
         break;
       case 'refresh':
         // ejempo message = '_CMD_REFRESH_123_sd1256fd245f3d56';
@@ -381,12 +381,18 @@ function createRoom(data){
   data = (typeof data === 'object') ? data : {};
   const roomId = data.room ? data.room : 123;
   const title = data.title ? data.title : '';
+  const userId = data.userId ? data.userId : null;
   let res = '';
   console.log('2 createRoom', data, roomId, topic);
 
+  if(roomNow){
+    res = 'Ya existe una sala creada.';
+    return io.to(userId).emit('socketErrores', { message: res, type: 'createRoom', userType: '' });
+  }
+
   //socket.join(roomId);
   roomNow = roomId;
-
+  
   if(!rooms[roomId]){
     topic = title;
     rooms[roomId] = {
@@ -399,7 +405,8 @@ function createRoom(data){
   }else{
     res = 'No se creo la sala orque ya existe una con el mismno nombre.';
   }
-  return res;
+  io.to(userId).emit('socketErrores', { message: res, type: 'createRoom', userType: '' });
+  //return res;
 }
 
 function refreshPage(data){
